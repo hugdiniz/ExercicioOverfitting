@@ -11,7 +11,7 @@ type Legendre
     this = new()
     this.qf = qf
     this.sigma = sigma
-    this.poly = [Float64(pol )for pol in sp.legendre(qf, monic=true)]    
+    this.poly = [Float64(pol )for pol in sp.legendre(qf, monic=true)]
     this.generatorPoints =  function (n)
       xs = sort([ this.generateXPoint() for i=1:n])
       ys = [this.generateYPoint(x) for x in xs]
@@ -21,9 +21,23 @@ type Legendre
       return Float64(rand(Bool) ? rand() : -rand())
     end
     this.generateYPoint = function (x)
-      return Float64(sum([this.poly[i]*(x^(i-1)) for i = 1:length(this.poly)]) + ( rand(Bool)? rand(0.0:0.001:this.sigma) : -rand(0.0:0.001:this.sigma)))
-    end
+      if this.qf==0
+          return one(x)
+      elseif this.qf==1
+          return(x)
+      end
 
+      p0 = one(x)
+      p1 = x
+
+      for i = 2:n
+          p2 = ( (2i-1)*this.qf*p1 - (i-1)*p0 ) / i
+          p0 = p1
+          p1 = p2
+      end
+
+      return p1
+    end
     return this
   end
 end

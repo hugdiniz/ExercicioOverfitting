@@ -20,20 +20,19 @@ end
 
   twoPolynomial = polyfit(x,y,2)
   tenPolynomial = polyfit(x,y,10)
+  errorFunction  = function(x)
+    return findY(tenPolynomial,x) - findY(twoPolynomial,x)
+  end
 
-  legendrePerfect = Legendre(targetComplexity,0)
-
-  xTests = sort([legendrePerfect.generateXPoint() for i=1:numberPointsTest])
-
-  yTest = [legendrePerfect.generateYPoint(xTest) for xTest in xTests]
-
-  yTwo = [findY(twoPolynomial,i) for i in xTests]
-  yTen = [findY(tenPolynomial,i) for i in xTests]
-
-  eoutTwo = sum((yTest - yTwo).^2)/length(yTest)
-  eoutTen = sum((yTest - yTen).^2)/length(yTest)
-
-  return eoutTen - eoutTwo
+  #legendrePerfect = Legendre(targetComplexity,0)
+  #xTests = sort([legendrePerfect.generateXPoint() for i=1:numberPointsTest])
+  #yTest = [legendrePerfect.generateYPoint(xTest) for xTest in xTests]
+  #yTwo = [findY(twoPolynomial,i) for i in xTests]
+  #yTen = [findY(tenPolynomial,i) for i in xTests]
+  #eoutTwo = sum((yTest - yTwo).^2)/length(yTest)
+  #eoutTen = sum((yTest - yTen).^2)/length(yTest)
+  #return eoutTen - eoutTwo
+  return quadgk(errorFunction,-1,1)[1]
 end
 
 @everywhere function executeAll()

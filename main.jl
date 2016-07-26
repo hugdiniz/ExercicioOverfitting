@@ -1,5 +1,5 @@
 
-addprocs(5)
+#addprocs(5)
 @everywhere include("generatorPoints.jl")
 
 @everywhere function polyfit(x, y, n)
@@ -18,21 +18,35 @@ end
   x = convert(Array{Float64}, x)
   y = convert(Array{Float64}, y)
 
-  twoPolynomial = polyfit(x,y,2)
-  tenPolynomial = polyfit(x,y,10)
-  errorFunction  = function(x)
-    return findY(tenPolynomial,x) - findY(twoPolynomial,x)
+  yWithNoise = y + noiseLevel
+
+  twoPolynomial = polyfit(x,yWithNoise,2)
+  tenPolynomial = polyfit(x,yWithNoise,10)
+
+  kTwo = sum([(twoPolynomial[i])/(2*i+1) for i=1:length(twoPolynomial)])
+  
+  twoPolynomialNormalized = [a/sqrt(kTwo) for a in twoPolynomial]
+
+  kTen = sum([(tenPolynomial[i])/(2*i+1) for i=1:length(tenPolynomial)])
+  tenPolynomialNormalized = [a/sqrt(kTen) for a in tenPolynomial]
+
+  errorFunctionTen  = function(x)
+    return findY(twoPolynomialNormalized,x) - legendre.generateYPoint(x)
   end
 
-  #legendrePerfect = Legendre(targetComplexity,0)
-  #xTests = sort([legendrePerfect.generateXPoint() for i=1:numberPointsTest])
-  #yTest = [legendrePerfect.generateYPoint(xTest) for xTest in xTests]
-  #yTwo = [findY(twoPolynomial,i) for i in xTests]
-  #yTen = [findY(tenPolynomial,i) for i in xTests]
-  #eoutTwo = sum((yTest - yTwo).^2)/length(yTest)
-  #eoutTen = sum((yTest - yTen).^2)/length(yTest)
-  #return eoutTen - eoutTwo
-  return quadgk(errorFunction,-1,1)[1]
+  errorFunctionTwo  = function(x)
+    return findY(tenPolynomialNormalized,x) - legendre.generateYPoint(x)
+  end
+  #print(quadgk(errorFunctionTen,-1,1)[1],"   ", quadgk(errorFunctionTwo,-1,1)[1])
+  xTests = sort([legendre.generateXPoint() for i=1:numberPointsTest])
+  yTest = [legendre.generateYPoint(xTest) for xTest in xTests]
+
+  yTwo = [findY(twoPolynomialNormalized,i) for i in xTests]
+  yTen = [findY(tenPolynomialNormalized,i) for i in xTests]
+  eoutTwo = sum((yTest - yTwo).^2)/length(yTest)
+  eoutTen = sum((yTest - yTen).^2)/length(yTest)
+  return eoutTen - eoutTwo
+  #return quadgk(errorFunctionTen,-1,1)[1] - quadgk(errorFunctionTwo,-1,1)[1]
 end
 
 @everywhere function executeAll()
@@ -43,6 +57,7 @@ end
   executeRepetition = 10000
   figure2 = SharedArray(Float64, (length(numberPointsTrains),length(targetComplexitys)))
   x = 1
+
   @sync @parallel for targetComplexity in targetComplexitys
     y = 1
     for numberPointsTrain in numberPointsTrains

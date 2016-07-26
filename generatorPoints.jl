@@ -30,7 +30,7 @@ type Legendre
       p0 = one(x)
       p1 = x
 
-      for i = 2:n
+      for i = 2:this.qf
           p2 = ( (2i-1)*this.qf*p1 - (i-1)*p0 ) / i
           p0 = p1
           p1 = p2

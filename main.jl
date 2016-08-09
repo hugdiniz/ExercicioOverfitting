@@ -15,34 +15,26 @@ end
   legendre = Legendre(targetComplexity,noiseLevel)
 
   x,y = legendre.generatorPoints(numberPointsTrain)
+
   x = convert(Array{Float64}, x)
   y = convert(Array{Float64}, y)
 
-  yWithNoise = y + noiseLevel
-
-  twoPolynomial = polyfit(x,yWithNoise,2)
-  tenPolynomial = polyfit(x,yWithNoise,10)
-
-  kTwo = sum([(twoPolynomial[i])/(2*i+1) for i=1:length(twoPolynomial)])
-  
-  twoPolynomialNormalized = [a/sqrt(kTwo) for a in twoPolynomial]
-
-  kTen = sum([(tenPolynomial[i])/(2*i+1) for i=1:length(tenPolynomial)])
-  tenPolynomialNormalized = [a/sqrt(kTen) for a in tenPolynomial]
+  twoPolynomial = polyfit(x,y,2)
+  tenPolynomial = polyfit(x,y,10)
 
   errorFunctionTen  = function(x)
-    return findY(twoPolynomialNormalized,x) - legendre.generateYPoint(x)
+    return findY(twoPolynomial,x) - legendre.generateYPoint(x)
   end
 
   errorFunctionTwo  = function(x)
-    return findY(tenPolynomialNormalized,x) - legendre.generateYPoint(x)
+    return findY(tenPolynomial,x) - legendre.generateYPoint(x)
   end
   #print(quadgk(errorFunctionTen,-1,1)[1],"   ", quadgk(errorFunctionTwo,-1,1)[1])
   xTests = sort([legendre.generateXPoint() for i=1:numberPointsTest])
   yTest = [legendre.generateYPoint(xTest) for xTest in xTests]
 
-  yTwo = [findY(twoPolynomialNormalized,i) for i in xTests]
-  yTen = [findY(tenPolynomialNormalized,i) for i in xTests]
+  yTwo = [findY(twoPolynomial,i) for i in xTests]
+  yTen = [findY(tenPolynomial,i) for i in xTests]
   eoutTwo = sum((yTest - yTwo).^2)/length(yTest)
   eoutTen = sum((yTest - yTen).^2)/length(yTest)
   return eoutTen - eoutTwo
@@ -51,10 +43,10 @@ end
 
 @everywhere function executeAll()
 
-  targetComplexitys = 1:150
-  noiseLevels = 0.0:(3/150):3.0
-  numberPointsTrains = 1:150
-  executeRepetition = 10000
+  targetComplexitys = 1:2:100
+  noiseLevels = 0.0:0.05:2.0
+  numberPointsTrains = 20:5:130
+  executeRepetition = 10
   figure2 = SharedArray(Float64, (length(numberPointsTrains),length(targetComplexitys)))
   x = 1
 

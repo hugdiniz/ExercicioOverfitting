@@ -1,44 +1,36 @@
+using PyPlot
+const plt = PyPlot
 
-#addprocs(5)
+addprocs(3)
 @everywhere include("generatorPoints.jl")
+@everywhere include("legendreFunctions.jl")
 
 @everywhere function polyfit(x, y, n)
   A = [ float(x[i])^p for i = 1:length(x), p = 0:n ]
   A \ y
 end
 
+
+
 @everywhere function findY(polynomial,x)
   return sum([polynomial[i]*(x^(i-1)) for i = 1:length(polynomial)])
 end
 
 @everywhere function execute(numberPointsTrain,noiseLevel,targetComplexity,numberPointsTest = 100)
-  legendre = Legendre(targetComplexity,noiseLevel)
+  #legendre = Legendre(targetComplexity,noiseLevel)
+  #x,y = legendre.generatorPoints(numberPointsTrain)
 
-  x,y = legendre.generatorPoints(numberPointsTrain)
-
+  x,y,coeficienteNormalizados = generatorPoints(numberPointsTrain,noiseLevel,targetComplexity)
   x = convert(Array{Float64}, x)
   y = convert(Array{Float64}, y)
 
-  twoPolynomial = polyfit(x,y,2)
-  tenPolynomial = polyfit(x,y,10)
 
-  errorFunctionTen  = function(x)
-    return findY(twoPolynomial,x) - legendre.generateYPoint(x)
-  end
+  #eoutTwo = regressionAndErrorCalcLegendreType(numberPointsTrain,legendre,x,y,2)
+  #eoutTen = regressionAndErrorCalcLegendreType(numberPointsTrain,legendre,x,y,10)
 
-  errorFunctionTwo  = function(x)
-    return findY(tenPolynomial,x) - legendre.generateYPoint(x)
-  end
-  #print(quadgk(errorFunctionTen,-1,1)[1],"   ", quadgk(errorFunctionTwo,-1,1)[1])
-  xTests = sort([legendre.generateXPoint() for i=1:numberPointsTest])
-  yTest = [legendre.generateYPoint(xTest) for xTest in xTests]
-
-  yTwo = [findY(twoPolynomial,i) for i in xTests]
-  yTen = [findY(tenPolynomial,i) for i in xTests]
-  eoutTwo = sum((yTest - yTwo).^2)/length(yTest)
-  eoutTen = sum((yTest - yTen).^2)/length(yTest)
+  eoutTwo = regressionAndErrorCalcLegendreFunction(numberPointsTrain,coeficienteNormalizados,x,y,2,targetComplexity)
+  eoutTen = regressionAndErrorCalcLegendreFunction(numberPointsTrain,coeficienteNormalizados,x,y,10,targetComplexity)
   return eoutTen - eoutTwo
-  #return quadgk(errorFunctionTen,-1,1)[1] - quadgk(errorFunctionTwo,-1,1)[1]
 end
 
 @everywhere function executeAll()
@@ -46,14 +38,14 @@ end
   targetComplexitys = 1:2:100
   noiseLevels = 0.0:0.05:2.0
   numberPointsTrains = 20:5:130
-  executeRepetition = 10
-  figure2 = SharedArray(Float64, (length(numberPointsTrains),length(targetComplexitys)))
+  executeRepetition = 10000
+  figure2 = SharedArray(Float64, (length(targetComplexitys),length(numberPointsTrains)))
   x = 1
 
   @sync @parallel for targetComplexity in targetComplexitys
     y = 1
     for numberPointsTrain in numberPointsTrains
-      figure2[y,x] = sum([execute(numberPointsTrain,0.1,targetComplexity) for i=1:executeRepetition])/executeRepetition
+      figure2[x,y] = sum([execute(numberPointsTrain,0.1,targetComplexity) for i=1:executeRepetition])/executeRepetition
       y = y + 1
     end
     x = x + 1
@@ -74,8 +66,12 @@ end
   writecsv("figure2.csv",figure2)
   #writecsv("figure1.csv",figure1)
   return figure2
+  plt.imshow(figure2, cmap="jet", interpolation="gaussian", origin="lower", vmin=-0.2, vmax=0.2, extent=[20,130,0,2], aspect="auto")
+  plt.colorbar()
+  plt.show()
 
 end
+
 
 
 

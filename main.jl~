@@ -1,12 +1,22 @@
+using PyPlot
+const plt = PyPlot
 
-#include("generatorPoints.jl")
-include("legendreFunctions.jl")
+#addprocs(3)
+@everywhere include("generatorPoints.jl")
+@everywhere include("legendreFunctions.jl")
 
-function findY(polynomial,x)
+@everywhere function polyfit(x, y, n)
+  A = [ float(x[i])^p for i = 1:length(x), p = 0:n ]
+  A \ y
+end
+
+
+
+@everywhere function findY(polynomial,x)
   return sum([polynomial[i]*(x^(i-1)) for i = 1:length(polynomial)])
 end
 
-function execute(numberPointsTrain,noiseLevel,targetComplexity,numberPointsTest = 100)
+@everywhere function execute(numberPointsTrain,noiseLevel,targetComplexity,numberPointsTest = 100)
   #legendre = Legendre(targetComplexity,noiseLevel)
   #x,y = legendre.generatorPoints(numberPointsTrain)
 
@@ -23,11 +33,12 @@ function execute(numberPointsTrain,noiseLevel,targetComplexity,numberPointsTest 
   return eoutTen - eoutTwo
 end
 
-function executeAndWrite(nameCSV = "none", executeRepetition = 100)
+@everywhere function executeAll(nameCSV = "none")
 
   targetComplexitys = 1:2:100
   noiseLevels = 0.0:0.05:2.0
   numberPointsTrains = 20:5:130
+  executeRepetition = 3000
   figure2 = SharedArray(Float64, (length(targetComplexitys),length(numberPointsTrains)))
   x = 1
   for targetComplexity in targetComplexitys
@@ -39,34 +50,66 @@ function executeAndWrite(nameCSV = "none", executeRepetition = 100)
     x = x + 1
   end
 
-  figure1 = SharedArray(Float64, (length(noiseLevels),length(numberPointsTrains)))
+  #figure1 = SharedArray(Float64, (length(numberPointsTrains),length(noiseLevels)))
+  #@parallel for noiseLevel in noiseLevels
+  #  y = 1
+  #  for numberPointsTrain in numberPointsTrains
+  #    figure1[y,x] = execute(numberPointsTrain,noiseLevels,20)in
+  #    y = y + 1
+  #  end
+  #  x = x + 1
+  #end
+
+
+  println("Waiting ...")
+  println("Writing...")
+  nameCSV = string(nameCSV,"_figure2.csv")
+  writecsv(nameCSV,figure2)
+  #writecsv("figure1.csv",figure1)
+  return figure2
+
+
+end
+
+@everywhere function executeAll(nameCSV = "none")
+
+  targetComplexitys = 1:2:100
+  noiseLevels = 0.0:0.05:2.0
+  numberPointsTrains = 20:5:130
+  executeRepetition = 3000
+  figure2 = SharedArray(Float64, (length(targetComplexitys),length(numberPointsTrains)))
   x = 1
-  for noiseLevel in noiseLevels
+  for targetComplexity in targetComplexitys
     y = 1
     for numberPointsTrain in numberPointsTrains
-      figure1[x,y] = sum([execute(numberPointsTrain,noiseLevel,20) for i=1:executeRepetition])/executeRepetition
+      figure2[x,y] = sum([execute(numberPointsTrain,0.1,targetComplexity) for i=1:executeRepetition])/executeRepetition
       y = y + 1
     end
     x = x + 1
   end
 
+  #figure1 = SharedArray(Float64, (length(numberPointsTrains),length(noiseLevels)))
+  #@parallel for noiseLevel in noiseLevels
+  #  y = 1
+  #  for numberPointsTrain in numberPointsTrains
+  #    figure1[y,x] = execute(numberPointsTrain,noiseLevels,20)in
+  #    y = y + 1
+  #  end
+  #  x = x + 1
+  #end
+
+
+  println("Waiting ...")
   println("Writing...")
-  nameCSVFigura1 = string("csv/",nameCSV,"_figure1.csv")
-  writecsv(nameCSVFigura1,figure1)
-  nameCSVFigura2 = string("csv/",nameCSV,"_figure2.csv")
-  writecsv(nameCSVFigura2,figure2)
+  nameCSV = string(nameCSV,"_figure2.csv")
+  writecsv(nameCSV,figure2)
   #writecsv("figure1.csv",figure1)
-end
+  plt.imshow(figure2, cmap="jet", interpolation="gaussian", origin="bottom", vmin=-0.2, vmax=0.2, extent=[20,130,1,100], aspect="auto")
+  plt.colorbar()
+  plt.show()
+  return figure2
 
 
-@everywhere function executeAllIteration(iterationMax = 100)
-  pointer = readcsv("pointer.txt")[1]
-  executeRepetition = 1000
-  for i in pointer+1:pointer+iterationMax
-    executeAndWrite(i,executeRepetition)
-  end
-  newPointer = pointer+iterationMax
-  writecsv("pointer.txt",newPointer)
 end
 
 

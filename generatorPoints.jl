@@ -1,5 +1,5 @@
-using PyCall
-@pyimport scipy.special as sp
+
+
 type Legendre
   coeficienteNormalizados::Array{Float64}
   generatorPoints::Function

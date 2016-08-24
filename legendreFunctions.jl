@@ -16,7 +16,7 @@ function generateXPoint()
 end
 
 function generateYPoint(x,noiseLevel,qf,coeficienteNormalizados)
-  f = sum([coeficienteNormalizados[i] * iterativeLegendre(qf,x) for i in 1:(qf+1)])
+  f = sum([coeficienteNormalizados[i] * iterativeLegendre(i -1,x) for i in 1:(qf+1)])
   return f + sqrt(noiseLevel) * rand()
 end
 

@@ -55,13 +55,12 @@ function executeAndWrite(nameCSV = "none", executeRepetition = 100)
   writecsv(nameCSVFigura1,figure1)
   nameCSVFigura2 = string("csv/",nameCSV,"_figure2.csv")
   writecsv(nameCSVFigura2,figure2)
-  #writecsv("figure1.csv",figure1)
 end
 
 
-@everywhere function executeAllIteration(iterationMax = 100)
+@everywhere function executeAllIteration(iterationMax = 100, executeRepetition = 1000)
   pointer = readcsv("pointer.txt")[1]
-  executeRepetition = 1000
+
   for i in pointer+1:pointer+iterationMax
     executeAndWrite(i,executeRepetition)
   end

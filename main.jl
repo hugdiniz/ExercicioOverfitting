@@ -23,7 +23,7 @@ function execute(numberPointsTrain,noiseLevel,targetComplexity,numberPointsTest 
   return eoutTen - eoutTwo
 end
 
-function executeAndWrite(nameCSV = "none", executeRepetition = 100)
+function executeAndWrite(executeRepetition = 100)
 
   targetComplexitys = 1:2:100
   noiseLevels = 0.0:0.05:2.0
@@ -49,7 +49,7 @@ function executeAndWrite(nameCSV = "none", executeRepetition = 100)
     end
     x = x + 1
   end
-
+  nameCSV = string(round(Int64,rand()*10000000000),round(Int64,rand()*10000000000))
   println("Writing...")
   nameCSVFigura1 = string("csv/",nameCSV,"_figure1.csv")
   writecsv(nameCSVFigura1,figure1)
@@ -59,13 +59,9 @@ end
 
 
 @everywhere function executeAllIteration(iterationMax = 100, executeRepetition = 1000)
-  pointer = readcsv("pointer.txt")[1]
-
-  for i in pointer+1:pointer+iterationMax
-    executeAndWrite(i,executeRepetition)
+  for i in 1:iterationMax
+    executeAndWrite(executeRepetition)
   end
-  newPointer = pointer+iterationMax
-  writecsv("pointer.txt",newPointer)
 end
 
 
